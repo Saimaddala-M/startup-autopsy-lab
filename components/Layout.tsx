@@ -15,8 +15,14 @@ import {
   X,
   Target,
   ChevronLeft,
-  Globe
+  Globe,
+  History
 } from 'lucide-react';
+
+// constants used for footer
+const WEBSITE_URL = 'https://yourwebsite.com';
+const VERSION = '1.1.0';
+
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -140,6 +146,14 @@ const Layout: React.FC<LayoutProps> = ({ children, activeState, onNavigate, user
             type="neutral"
             collapsed={isSidebarCollapsed}
           />
+          <SidebarLink
+            active={activeState === AppState.HISTORY}
+            onClick={() => onNavigate(AppState.HISTORY)}
+            icon={<History className="w-5 h-5" />}
+            label="Archive"
+            type="neutral"
+            collapsed={isSidebarCollapsed}
+          />
           <div className={`pt-6 pb-2 ${isSidebarCollapsed ? 'flex justify-center' : ''}`}>
             {!isSidebarCollapsed ? (
               <span className="text-[10px] font-black text-gray-600 uppercase tracking-[0.4em] ml-4">Community</span>
@@ -233,6 +247,14 @@ const Layout: React.FC<LayoutProps> = ({ children, activeState, onNavigate, user
           {children}
         </div>
       </main>
+
+      {/* footer with website and version info */}
+      <footer className="absolute bottom-0 left-0 w-full text-center text-xs text-gray-500 p-2">
+        <a href={WEBSITE_URL} target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-300">
+          {WEBSITE_URL.replace(/^https?:\/\//, '')}
+        </a>{' '}
+        | v{VERSION}
+      </footer>
     </div>
   );
 };

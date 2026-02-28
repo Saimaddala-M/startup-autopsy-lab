@@ -84,6 +84,9 @@ export const spyOnCompetitor = async (name: string): Promise<SpyResult> => {
     Return in this EXACT JSON format:
     {
       "name": "${name}",
+      "founder": "string (The verified founders)",
+      "estimatedRevenue": "string (Latest reported or estimated revenue with currency)",
+      "marketShare": "string (Verified or estimated market share percentage/position)",
       "strengths": ["string"],
       "weaknesses": ["string"],
       "differentiationIdeas": ["string"],

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ForumMessage } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, MessageSquare, Activity, Target, ShieldAlert, ThumbsUp, MessageCircle } from 'lucide-react';
+import { Send, MessageSquare, Activity, Target, ShieldAlert, ThumbsUp, MessageCircle, X } from 'lucide-react';
 import { supabase } from '../services/geminiService';
 
 interface PublicForumProps {
@@ -10,32 +10,34 @@ interface PublicForumProps {
 
 const PublicForum: React.FC<PublicForumProps> = ({ user }) => {
   const [messages, setMessages] = useState<ForumMessage[]>([]);
+  const [ideas, setIdeas] = useState<any[]>([]);
   const [input, setInput] = useState('');
+  const [showIdeaForm, setShowIdeaForm] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // 1. Fetch initial messages
-    const fetchMessages = async () => {
-      const { data, error } = await supabase
-        .from('forum_messages')
-        .select('*')
-        .order('created_at', { ascending: true })
-        .limit(50);
+    // 1. Fetch initial messages & ideas
+    const fetchData = async () => {
+      const [{ data: msgData }, { data: ideaData }] = await Promise.all([
+        supabase.from('forum_messages').select('*').order('created_at', { ascending: true }).limit(50),
+        supabase.from('startup_ideas').select('*').order('created_at', { ascending: false }).limit(6)
+      ]);
 
-      if (data) {
-        setMessages(data.map(m => ({
+      if (msgData) {
+        setMessages(msgData.map(m => ({
           id: m.id,
           user: m.user_name,
           text: m.message_text,
           timestamp: new Date(m.created_at).getTime()
         })));
       }
+      if (ideaData) setIdeas(ideaData);
     };
 
-    fetchMessages();
+    fetchData();
 
-    // 2. Subscribe to new messages
-    const channel = supabase
+    // 2. Subscribe to changes
+    const msgChannel = supabase
       .channel('public:forum_messages')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'forum_messages' },
         (payload) => {
@@ -49,8 +51,17 @@ const PublicForum: React.FC<PublicForumProps> = ({ user }) => {
         })
       .subscribe();
 
+    const ideaChannel = supabase
+      .channel('public:startup_ideas')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'startup_ideas' },
+        (payload) => {
+          setIdeas(prev => [payload.new, ...prev].slice(0, 6));
+        })
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(msgChannel);
+      supabase.removeChannel(ideaChannel);
     };
   }, []);
 
@@ -74,6 +85,24 @@ const PublicForum: React.FC<PublicForumProps> = ({ user }) => {
       console.error("Error sending message:", error);
     } else {
       setInput('');
+    }
+  };
+
+  const handlePostIdea = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
+    const { ideaName, ideaSummary } = Object.fromEntries(formData.entries());
+
+    const { error } = await supabase
+      .from('startup_ideas')
+      .insert([{
+        name: ideaName,
+        summary: ideaSummary,
+        user_name: user
+      }]);
+
+    if (!error) {
+      setShowIdeaForm(false);
     }
   };
 
@@ -105,31 +134,48 @@ const PublicForum: React.FC<PublicForumProps> = ({ user }) => {
       <div className="flex-1 flex flex-col lg:flex-row gap-6 overflow-hidden">
         {/* Main Feed */}
         <div className="flex-1 flex flex-col gap-6 overflow-y-auto lg:overflow-hidden pr-0 lg:pr-2">
-          {/* Mock Idea Cards - Stacked on mobile */}
+          {/* Idea Cards List */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-2">
-            <MockIdeaCard
-              name="NexusFlow"
-              summary="AI-driven liquidity management for cross-border B2B payments."
-              upvotes="124"
-              comments="18"
-              time="2h ago"
-            />
-            <MockIdeaCard
-              name="Solaris"
-              summary="Decentralized grid management for residential solar clusters."
-              upvotes="89"
-              comments="12"
-              time="4h ago"
-            />
-            <MockIdeaCard
-              name="BioSync"
-              summary="Real-time metabolic tracking via non-invasive dermal sensors."
-              upvotes="210"
-              comments="45"
-              time="6h ago"
-              className="md:hidden lg:block"
-            />
+            <button
+              onClick={() => setShowIdeaForm(true)}
+              className="glass-card p-5 md:p-6 rounded-2xl md:rounded-3xl border border-dashed border-cyan-500/30 hover:border-cyan-500 transition-all flex flex-col items-center justify-center gap-3 group text-cyan-500/60 hover:text-cyan-500"
+            >
+              <Target className="w-8 h-8 group-hover:scale-110 transition-transform" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Post New Idea</span>
+            </button>
+
+            {ideas.map((idea) => (
+              <MockIdeaCard
+                key={idea.id}
+                name={idea.name}
+                summary={idea.summary}
+                upvotes={idea.upvotes}
+                comments={idea.comments_count}
+                time={new Date(idea.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              />
+            ))}
           </div>
+
+          <AnimatePresence>
+            {showIdeaForm && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="absolute inset-x-0 top-0 z-50 p-6 glass-dark border border-cyan-500/30 rounded-3xl shadow-2xl"
+              >
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-black uppercase tracking-tighter">Post Strategy Concept</h3>
+                  <button onClick={() => setShowIdeaForm(false)} title="Close form"><X className="w-5 h-5" /></button>
+                </div>
+                <form onSubmit={handlePostIdea} className="space-y-4">
+                  <input name="ideaName" required placeholder="Project Codename..." className="w-full bg-white/5 border border-white/10 rounded-xl p-4 focus:outline-none focus:border-cyan-500/50 transition-all text-sm font-bold" />
+                  <textarea name="ideaSummary" required placeholder="Concept summary & tactical edge..." className="w-full bg-white/5 border border-white/10 rounded-xl p-4 focus:outline-none focus:border-cyan-500/50 transition-all text-sm min-h-[100px]" />
+                  <button type="submit" className="w-full py-4 bg-cyan-500 text-black rounded-xl font-black uppercase tracking-widest text-xs glow-cyan">Deploy Concept</button>
+                </form>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <div className="flex-1 min-h-[400px] lg:min-h-0 glass-dark rounded-3xl border border-white/10 flex flex-col overflow-hidden relative">
             <div className="absolute inset-0 tactical-grid opacity-5 pointer-events-none"></div>
@@ -170,6 +216,7 @@ const PublicForum: React.FC<PublicForumProps> = ({ user }) => {
               />
               <button
                 type="submit"
+                title="Send message"
                 className="px-4 md:px-6 bg-cyan-500 text-black rounded-xl font-black hover:bg-cyan-400 transition-all flex items-center justify-center group shadow-lg glow-cyan min-h-[44px]"
               >
                 <Send className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />

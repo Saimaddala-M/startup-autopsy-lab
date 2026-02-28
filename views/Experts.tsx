@@ -27,7 +27,17 @@ const Experts: React.FC = () => {
   const handleApplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
-    const data = Object.fromEntries(formData.entries());
+    const rawData = Object.fromEntries(formData.entries());
+
+    // Map form fields to backend schema
+    const data = {
+      name: rawData.name,
+      role: rawData.profession,
+      expertise: (rawData.expertise as string).split(',').map(s => s.trim()),
+      bio: rawData.pitch,
+      availability: 'Reviewing...', // Default status for new applicants
+      avatar: `https://picsum.photos/seed/${rawData.name}/100/100`
+    };
 
     try {
       const response = await fetch('/api/experts/apply', {
@@ -38,6 +48,8 @@ const Experts: React.FC = () => {
 
       if (response.ok) {
         setIsSubmitted(true);
+        // Refresh experts list after small delay
+        setTimeout(fetchExperts, 1000);
         setTimeout(() => {
           setShowApplyForm(false);
           setIsSubmitted(false);
@@ -49,10 +61,28 @@ const Experts: React.FC = () => {
     }
   };
 
+  const fetchExperts = () => {
+    setLoading(true);
+    fetch('/api/experts')
+      .then(res => res.json())
+      .then(data => {
+        setExperts(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchExperts();
+  }, []);
+
   if (showApplyForm) {
     return (
       <div className="max-w-3xl mx-auto py-4 md:py-8 px-2">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="glass-dark p-6 md:p-10 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden"
@@ -72,7 +102,7 @@ const Experts: React.FC = () => {
                   <h2 className="text-2xl md:text-4xl font-black mb-2 uppercase tracking-tighter">Expert Registration</h2>
                   <p className="text-xs md:text-sm text-gray-400">Join the elite network of AutoPsy strategic advisors.</p>
                 </div>
-                <button 
+                <button
                   onClick={() => setShowApplyForm(false)}
                   className="text-[10px] font-bold text-gray-500 hover:text-white transition-colors uppercase tracking-widest min-h-[44px]"
                 >
@@ -119,16 +149,16 @@ const Experts: React.FC = () => {
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] ml-1">Strategic Pitch (AI-Analyzed)</label>
-                  <textarea 
+                  <textarea
                     name="pitch"
-                    required 
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 focus:outline-none focus:border-cyan-500/50 transition-all font-medium text-sm" 
-                    rows={4} 
+                    required
+                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 focus:outline-none focus:border-cyan-500/50 transition-all font-medium text-sm"
+                    rows={4}
                     placeholder="Briefly describe your unique value proposition as a strategic advisor. What 'unfair advantage' do you bring to founders?"
                   />
                 </div>
 
-                <button 
+                <button
                   type="submit"
                   className="w-full py-5 bg-cyan-500 text-black rounded-2xl font-black text-sm md:text-xl hover:bg-cyan-400 transition-all flex items-center justify-center gap-3 shadow-xl glow-cyan min-h-[56px] uppercase tracking-widest"
                 >
@@ -150,7 +180,7 @@ const Experts: React.FC = () => {
           <h1 className="text-[28px] sm:text-[36px] md:text-[42px] font-black mb-2 uppercase tracking-tighter text-glow leading-tight">Expert Advisory</h1>
           <p className="text-gray-400 font-mono text-[10px] uppercase tracking-widest">Connect with specialists // Stress-test intelligence</p>
         </div>
-        <button 
+        <button
           onClick={() => setShowApplyForm(true)}
           className="flex items-center justify-center gap-2 px-6 py-4 bg-cyan-500 text-black hover:bg-cyan-400 transition-all rounded-xl font-black text-xs tracking-widest uppercase shadow-lg glow-cyan group min-h-[44px]"
         >
@@ -166,18 +196,17 @@ const Experts: React.FC = () => {
               <div className="w-10 h-10 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
             </div>
           ) : experts.map(expert => (
-            <div 
+            <div
               key={expert.id}
               onClick={() => setSelectedExpert(expert)}
-              className={`group p-5 md:p-6 glass-dark rounded-3xl border transition-all cursor-pointer flex flex-col sm:flex-row gap-4 md:gap-6 relative overflow-hidden ${
-                selectedExpert?.id === expert.id ? 'border-cyan-500 bg-cyan-900/10' : 'border-white/10 hover:border-white/20'
-              }`}
+              className={`group p-5 md:p-6 glass-dark rounded-3xl border transition-all cursor-pointer flex flex-col sm:flex-row gap-4 md:gap-6 relative overflow-hidden ${selectedExpert?.id === expert.id ? 'border-cyan-500 bg-cyan-900/10' : 'border-white/10 hover:border-white/20'
+                }`}
             >
               <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 -mr-12 -mt-12 rotate-45 group-hover:bg-white/10 transition-colors hidden sm:block"></div>
-              <img 
-                src={expert.avatar} 
-                alt={expert.name} 
-                className="w-16 h-16 md:w-20 md:h-20 rounded-2xl object-cover grayscale group-hover:grayscale-0 transition-all relative z-10" 
+              <img
+                src={expert.avatar}
+                alt={expert.name}
+                className="w-16 h-16 md:w-20 md:h-20 rounded-2xl object-cover grayscale group-hover:grayscale-0 transition-all relative z-10"
                 referrerPolicy="no-referrer"
               />
               <div className="flex-1 relative z-10">
@@ -205,7 +234,7 @@ const Experts: React.FC = () => {
               <div className="animate-in fade-in slide-in-from-right-4 duration-500">
                 <h3 className="text-lg md:text-xl font-black mb-4 uppercase tracking-tight">Request Consultation</h3>
                 <p className="text-gray-400 text-xs md:text-sm mb-6 leading-relaxed">Discuss your AutoPsy report with <strong>{selectedExpert.name}</strong> to validate tactical moves.</p>
-                
+
                 <div className="space-y-4 mb-8">
                   <div className="p-4 bg-white/5 rounded-xl border border-white/5">
                     <p className="text-[9px] text-gray-500 uppercase font-bold mb-1 tracking-widest">Session Type</p>

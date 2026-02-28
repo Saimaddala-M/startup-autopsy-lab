@@ -8,6 +8,11 @@ import { MOCK_EXPERTS } from "./server/data";
 import * as gemini from "./server/gemini";
 import { connectDB } from "./server/db";
 import path from "path";
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function startServer() {
   const app = express();
@@ -62,30 +67,51 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
-  app.get("/api/experts", (req, res) => {
-    res.json(MOCK_EXPERTS);
+  app.get("/api/experts", async (req, res) => {
+    try {
+      const { data, error } = await supabase
+        .from('experts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      res.json(data);
+    } catch (error) {
+      console.error("Experts Fetch Failed:", error);
+      res.json(MOCK_EXPERTS); // Fallback to mock data if DB fails
+    }
   });
 
-  app.post("/api/experts/apply", (req, res) => {
-    // In a real app, we would save the application to a database
-    console.log("New expert application:", req.body);
-    res.json({ status: "success", message: "Application received" });
+  app.post("/api/experts/apply", async (req, res) => {
+    try {
+      const { name, role, expertise, bio, availability, avatar } = req.body;
+      const { data, error } = await supabase
+        .from('experts')
+        .insert([{ name, role, expertise, bio, availability, avatar: avatar || `https://picsum.photos/seed/${name}/100/100` }]);
+
+      if (error) throw error;
+      res.json({ status: "success", message: "Application received", data });
+    } catch (error) {
+      console.error("Expert Application Failed:", error);
+      res.status(500).json({ status: "error", message: "Failed to submit application" });
+    }
   });
 
   app.post("/api/analyze", async (req, res) => {
     try {
       const result = await gemini.analyzeStartup(req.body);
 
-      // Save to MongoDB (Optional persistence)
+      // Save to Supabase (Universal persistence)
       try {
-        const { Analysis } = await import("./server/db");
-        await new Analysis({
-          startupName: req.body.name,
-          input: req.body,
-          result
-        }).save();
+        await supabase
+          .from('analysis_results')
+          .insert([{
+            startup_name: req.body.name,
+            input_data: req.body,
+            result_data: result
+          }]);
       } catch (dbErr) {
-        console.warn("DB Save Failed:", dbErr);
+        console.warn("Supabase Save Failed:", dbErr);
       }
 
       res.json(result);
@@ -96,21 +122,25 @@ async function startServer() {
     }
   });
 
+  app.get("/api/history", async (req, res) => {
+    try {
+      const { data, error } = await supabase
+        .from('analysis_results')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      res.json(data);
+    } catch (error) {
+      console.error("History Fetch Failed:", error);
+      res.status(500).json({ error: "Failed to fetch history" });
+    }
+  });
+
   app.post("/api/spy", async (req, res) => {
     try {
       const result = await gemini.spyOnCompetitor(req.body.name);
-
-      // Save to MongoDB (Optional persistence)
-      try {
-        const { SpyReport } = await import("./server/db");
-        await new SpyReport({
-          companyName: req.body.name,
-          result
-        }).save();
-      } catch (dbErr) {
-        console.warn("DB Save Failed:", dbErr);
-      }
-
+      // Removed MongoDB persistence for spy reports as requested
       res.json(result);
     } catch (error: unknown) {
       console.error(error);

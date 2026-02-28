@@ -9,6 +9,7 @@ import Ending from './views/Ending';
 import AuthView from './views/Auth';
 import PublicForum from './views/PublicForum';
 import TrendRadarView from './views/TrendRadarView';
+import History from './views/History';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from './services/geminiService';
 
@@ -94,6 +95,7 @@ const App: React.FC = () => {
           {appState === AppState.EXPERTS && <Experts />}
           {appState === AppState.PUBLIC_FORUM && <PublicForum user={user?.name || 'Anonymous'} />}
           {appState === AppState.TREND_RADAR && <TrendRadarView />}
+          {appState === AppState.HISTORY && <History />}
           {appState === AppState.ENDING && <Ending type="Human" onReset={() => setAppState(AppState.LANDING)} />}
         </motion.div>
       </AnimatePresence>

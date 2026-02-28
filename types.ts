@@ -68,6 +68,7 @@ export enum AppState {
   EXPERTS = 'experts',
   PUBLIC_FORUM = 'public_forum',
   TREND_RADAR = 'trend_radar',
+  HISTORY = 'history',
   ENDING = 'ending'
 }
 
