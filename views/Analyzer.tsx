@@ -36,10 +36,10 @@ const Analyzer: React.FC = () => {
     try {
       const analysis = await analyzeStartup(form);
       setResult(analysis);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Analysis Error:", error);
-      const errorMessage = error.message || "Unknown error";
-      const errorStatus = error.status || "500";
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorStatus = typeof error === 'object' && error !== null && 'status' in error ? (error as { status?: unknown }).status : undefined;
       alert(`Strategic analysis failed: ${errorMessage} (Status: ${errorStatus})`);
     } finally {
       setLoading(false);

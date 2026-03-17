@@ -43,8 +43,9 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
         alert('Check your email for the confirmation link!');
       }
       onAuthSuccess();
-    } catch (err: any) {
-      setError(err.message || 'Authentication failed');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Authentication failed';
+      setError(message);
     } finally {
       setLoading(false);
     }

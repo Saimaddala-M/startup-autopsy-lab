@@ -18,7 +18,6 @@ import {
   Activity,
   ArrowRight
 } from 'lucide-react';
-import { motion } from 'motion/react';
 
 const SpyMode: React.FC = () => {
   const [loading, setLoading] = useState(false);

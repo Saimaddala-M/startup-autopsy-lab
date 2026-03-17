@@ -1,6 +1,10 @@
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import "dotenv/config";
+
+type ListModelsResponse =
+  | { models: { name: string; supportedGenerationMethods: string[] }[]; error?: never }
+  | { models?: never; error: unknown }
+  | { models?: undefined; error?: undefined };
 
 async function listAllModels() {
     const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
@@ -14,13 +18,13 @@ async function listAllModels() {
     try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
         const response = await fetch(url);
-        const data = await response.json();
+        const data = (await response.json()) as ListModelsResponse;
 
         if (data.error) {
             console.error("API Error:", data.error);
         } else {
             console.log("Available Models:");
-            data.models?.forEach((m: any) => {
+            data.models?.forEach((m) => {
                 console.log(`- ${m.name} (Supported methods: ${m.supportedGenerationMethods.join(', ')})`);
             });
         }

@@ -1,6 +1,16 @@
 
 import { GoogleGenerativeAI } from "npm:@google/generative-ai@^0.21.0";
 
+type StartupInputLike = {
+  name: string;
+  problem: string;
+  audience: string;
+  industry: string;
+  revenueModel: string;
+  competitors?: string;
+  budget: string;
+};
+
 const getApiKey = () => {
   return Deno.env.get("GEMINI_API_KEY") || "";
 };
@@ -8,7 +18,7 @@ const getApiKey = () => {
 const getGenAI = () => new GoogleGenerativeAI(getApiKey());
 const MODEL_NAME = "gemini-flash-latest"; // Using verified latest flash model to avoid 404
 
-export const analyzeStartup = async (input: any) => {
+export const analyzeStartup = async (input: StartupInputLike) => {
   console.log("Analyzing startup:", input.name);
   const genAI = getGenAI();
   const model = genAI.getGenerativeModel({

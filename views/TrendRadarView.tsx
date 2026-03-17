@@ -8,10 +8,8 @@ import {
   AlertTriangle,
   RefreshCw,
   Globe,
-  Clock,
   ExternalLink,
   Info,
-  Maximize2,
   Minimize2,
   Crosshair
 } from 'lucide-react';
@@ -23,7 +21,7 @@ interface RadarNode {
   x: number; // 0-100 (Risk level)
   y: number; // 0-100 (Growth potential)
   type: 'opportunity' | 'failure';
-  details: any;
+  details: RadarData['failurePatterns'][number] | RadarData['opportunityIndustries'][number];
 }
 
 const TrendRadarView: React.FC = () => {

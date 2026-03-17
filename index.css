@@ -98,11 +98,11 @@
 
   /* Premium Glows */
   .glow-cyan {
-    @apply shadow-[0_0_30px_-5px_rgba(0, 229, 255, 0.4)];
+    @apply shadow-[0_0_30px_-5px_rgba(0,229,255,0.4)];
   }
 
   .glow-red {
-    @apply shadow-[0_0_30px_-5px_rgba(255, 59, 59, 0.4)];
+    @apply shadow-[0_0_30px_-5px_rgba(255,59,59,0.4)];
   }
 
   .text-glow {

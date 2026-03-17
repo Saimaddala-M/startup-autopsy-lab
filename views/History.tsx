@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { AnalysisResult } from '../types';
+import { AnalysisResult, StartupInput } from '../types';
 import { Search, History as HistoryIcon, Shield, ChevronRight, Calendar, User } from 'lucide-react';
 
 interface StoredAnalysis {
     id: string;
     startup_name: string;
-    input_data: any;
+    input_data: StartupInput;
     result_data: AnalysisResult;
     created_at: string;
 }

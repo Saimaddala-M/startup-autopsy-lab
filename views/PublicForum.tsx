@@ -8,9 +8,25 @@ interface PublicForumProps {
   user: string;
 }
 
+type IdeaRow = {
+  id: string;
+  name: string;
+  summary: string;
+  upvotes: string;
+  comments_count: string;
+  created_at: string;
+};
+
+type ForumMessageRow = {
+  id: string;
+  user_name: string;
+  message_text: string;
+  created_at: string;
+};
+
 const PublicForum: React.FC<PublicForumProps> = ({ user }) => {
   const [messages, setMessages] = useState<ForumMessage[]>([]);
-  const [ideas, setIdeas] = useState<any[]>([]);
+  const [ideas, setIdeas] = useState<IdeaRow[]>([]);
   const [input, setInput] = useState('');
   const [showIdeaForm, setShowIdeaForm] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -24,14 +40,14 @@ const PublicForum: React.FC<PublicForumProps> = ({ user }) => {
       ]);
 
       if (msgData) {
-        setMessages(msgData.map(m => ({
+        setMessages((msgData as ForumMessageRow[]).map(m => ({
           id: m.id,
           user: m.user_name,
           text: m.message_text,
           timestamp: new Date(m.created_at).getTime()
         })));
       }
-      if (ideaData) setIdeas(ideaData);
+      if (ideaData) setIdeas(ideaData as IdeaRow[]);
     };
 
     fetchData();
@@ -41,11 +57,12 @@ const PublicForum: React.FC<PublicForumProps> = ({ user }) => {
       .channel('public:forum_messages')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'forum_messages' },
         (payload) => {
+          const row = payload.new as ForumMessageRow;
           const newMessage: ForumMessage = {
-            id: payload.new.id,
-            user: payload.new.user_name,
-            text: payload.new.message_text,
-            timestamp: new Date(payload.new.created_at).getTime()
+            id: row.id,
+            user: row.user_name,
+            text: row.message_text,
+            timestamp: new Date(row.created_at).getTime()
           };
           setMessages(prev => [...prev.filter(m => m.id !== newMessage.id), newMessage]);
         })
@@ -55,7 +72,7 @@ const PublicForum: React.FC<PublicForumProps> = ({ user }) => {
       .channel('public:startup_ideas')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'startup_ideas' },
         (payload) => {
-          setIdeas(prev => [payload.new, ...prev].slice(0, 6));
+          setIdeas(prev => [payload.new as IdeaRow, ...prev].slice(0, 6));
         })
       .subscribe();
 

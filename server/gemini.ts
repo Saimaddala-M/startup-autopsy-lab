@@ -14,13 +14,13 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 1000): Promise<T> {
   try {
     return await fn();
-  } catch (error: any) {
-    console.error("Gemini SDK Catch:", {
-      message: error.message,
-      status: error.status,
-    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    const status = typeof error === 'object' && error !== null && 'status' in error ? (error as { status?: unknown }).status : undefined;
 
-    if (retries > 0 && (error.status === 429 || error.message?.includes('429') || error.message?.includes('quota'))) {
+    console.error("Gemini SDK Catch:", { message, status });
+
+    if (retries > 0 && (status === 429 || message.includes('429') || message.toLowerCase().includes('quota'))) {
       await sleep(delay);
       return withRetry(fn, retries - 1, delay * 2);
     }

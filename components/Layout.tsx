@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { AppState } from '../types';
 import {
   LayoutDashboard,
@@ -36,10 +36,10 @@ const Layout: React.FC<LayoutProps> = ({ children, activeState, onNavigate, user
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  // Close mobile menu on navigation
-  useEffect(() => {
+  const navigate = (state: AppState) => {
     setIsMobileMenuOpen(false);
-  }, [activeState]);
+    onNavigate(state);
+  };
 
   if (activeState === AppState.LANDING) return <>{children}</>;
 
@@ -74,7 +74,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeState, onNavigate, user
       <div className="md:hidden h-16 border-b border-white/[0.08] glass-dark flex items-center justify-between px-6 z-[60] sticky top-0">
         <div
           className="flex items-center gap-3 cursor-pointer"
-          onClick={() => onNavigate(AppState.LANDING)}
+          onClick={() => navigate(AppState.LANDING)}
         >
           <div className="w-9 h-9 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center font-bold text-xl shadow-[0_0_20px_rgba(6,182,212,0.3)]">
             A
@@ -128,7 +128,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeState, onNavigate, user
           <nav className="space-y-2">
             <SidebarLink
               active={activeState === AppState.ANALYZER}
-              onClick={() => onNavigate(AppState.ANALYZER)}
+              onClick={() => navigate(AppState.ANALYZER)}
               icon={<LayoutDashboard className="w-5 h-5" />}
               label="Analyzer"
               type="analyzer"
@@ -136,7 +136,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeState, onNavigate, user
             />
             <SidebarLink
               active={activeState === AppState.SPY_MODE}
-              onClick={() => onNavigate(AppState.SPY_MODE)}
+              onClick={() => navigate(AppState.SPY_MODE)}
               icon={<Target className="w-5 h-5" />}
               label="Spy Mode"
               type="spy"
@@ -144,7 +144,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeState, onNavigate, user
             />
             <SidebarLink
               active={activeState === AppState.TREND_RADAR}
-              onClick={() => onNavigate(AppState.TREND_RADAR)}
+              onClick={() => navigate(AppState.TREND_RADAR)}
               icon={<Globe className="w-5 h-5" />}
               label="Trend Radar"
               type="neutral"
@@ -152,7 +152,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeState, onNavigate, user
             />
             <SidebarLink
               active={activeState === AppState.HISTORY}
-              onClick={() => onNavigate(AppState.HISTORY)}
+              onClick={() => navigate(AppState.HISTORY)}
               icon={<History className="w-5 h-5" />}
               label="Archive"
               type="neutral"
@@ -169,7 +169,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeState, onNavigate, user
 
             <SidebarLink
               active={activeState === AppState.PUBLIC_FORUM}
-              onClick={() => onNavigate(AppState.PUBLIC_FORUM)}
+              onClick={() => navigate(AppState.PUBLIC_FORUM)}
               icon={<MessageSquare className="w-5 h-5" />}
               label="Public Forum"
               type="neutral"
@@ -177,7 +177,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeState, onNavigate, user
             />
             <SidebarLink
               active={activeState === AppState.EXPERTS}
-              onClick={() => onNavigate(AppState.EXPERTS)}
+              onClick={() => navigate(AppState.EXPERTS)}
               icon={<Users className="w-5 h-5" />}
               label="Experts"
               type="neutral"
@@ -238,7 +238,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeState, onNavigate, user
               </>
             ) : (
               <button
-                onClick={() => onNavigate(AppState.AUTH)}
+                onClick={() => navigate(AppState.AUTH)}
                 className="btn-premium flex items-center gap-3 px-6 py-3 bg-cyan-500 text-black rounded-xl font-black text-[11px] uppercase tracking-[0.2em] shadow-[0_0_40px_-10px_rgba(6,182,212,0.5)]"
               >
                 <LogIn className="w-4 h-4" />
